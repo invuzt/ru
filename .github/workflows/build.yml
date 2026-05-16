@@ -10,11 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java 8
+      - name: Setup Java 17 (for SDK tools)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 8
+          java-version: 17
 
       - name: Setup Android SDK
         run: |
@@ -31,20 +31,28 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
 
-      - name: Build APK with dx
+      - name: Build APK with dx (using Java 8 for javac)
         run: |
           export ANDROID_HOME=$PWD/android-sdk
           
-          # Compile Java ke class (target Java 7 for smaller dex)
+          # Cari Java 8 untuk kompilasi (bytecode lebih kecil)
+          JAVA8_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+          if [ ! -f "$JAVA8_HOME/bin/javac" ]; then
+            # Install Java 8 if not found
+            sudo apt-get update -qq && sudo apt-get install -y -qq openjdk-8-jdk
+            JAVA8_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+          fi
+          
+          # Compile dengan Java 8 (target 1.7 for smaller dex)
           mkdir -p build/classes
-          $ANDROID_HOME/build-tools/30.0.3/javac -source 1.7 -target 1.7 \
+          $JAVA8_HOME/bin/javac -source 1.7 -target 1.7 \
             -bootclasspath "$ANDROID_HOME/platforms/android-30/android.jar" \
             -d build/classes app/src/main/java/com/cak/ru/MainActivity.java
           
-          # Convert ke dex dengan --no-locals (lebih kecil)
+          # Convert ke dex dengan --no-locals
           $ANDROID_HOME/build-tools/30.0.3/dx --dex --no-locals --output=build/classes.dex build/classes
           
-          # Buat APK kosong + tambah dex + icon
+          # Buat APK kosong
           $ANDROID_HOME/build-tools/30.0.3/aapt package -f \
             -M app/src/main/AndroidManifest.xml \
             -I "$ANDROID_HOME/platforms/android-30/android.jar" \
@@ -53,7 +61,7 @@ jobs:
           # Tambah classes.dex
           $ANDROID_HOME/build-tools/30.0.3/aapt add build/unaligned.apk build/classes.dex
           
-          # Tambah icon PNG ke APK (biar icon muncul)
+          # Tambah icon
           $ANDROID_HOME/build-tools/30.0.3/aapt add build/unaligned.apk app/src/main/res/drawable/ic_launcher.png
           
           # Align & Sign
@@ -69,6 +77,7 @@ jobs:
             --ks-key-alias debug build/aligned.apk
           
           cp build/aligned.apk cak.ru.ultra-minimal.apk
+          echo "Final APK size:"
           ls -lh cak.ru.ultra-minimal.apk
 
       - name: Upload APK
