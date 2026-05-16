@@ -3,7 +3,7 @@ plugins {
 }
 android {
     compileSdk 34
-    namespace 'com.cak.ru'   # <-- namespace di sini, bukan di manifest
+    namespace 'com.cak.ru'
     defaultConfig {
         minSdk 21
         targetSdk 34

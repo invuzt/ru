@@ -2,7 +2,7 @@
 <manifest>
     <application
         android:label="Cak Ru"
-        android:icon="@android:drawable/star_big_on">
+        android:icon="@mipmap/ic_launcher">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
