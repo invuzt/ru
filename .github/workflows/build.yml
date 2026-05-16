@@ -2,7 +2,7 @@ name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   build:
@@ -10,50 +10,80 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Android SDK
-        run: |
-          sudo apt update
-          sudo apt install -y android-sdk
-          echo "ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
-          echo "$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Install build tools
+      - name: Build APK
         run: |
-          sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3" --no_https
-
-      - name: Compile Java
-        run: |
-          mkdir -p classes
-          javac -cp "$ANDROID_HOME/platforms/android-30/android.jar" -d classes MainActivity.java
-
-      - name: Generate DEX
-        run: |
-          dx --dex --output=classes.dex classes/
-
-      - name: Package APK
-        run: |
-          mkdir -p apk
-          cp classes.dex apk/
-          aapt package -f -M AndroidManifest.xml -F apk/unaligned.apk -I "$ANDROID_HOME/platforms/android-30/android.jar" apk/
-
-      - name: Align & Sign with dummy keystore
-        run: |
-          zipalign -f -p 4 apk/unaligned.apk apk/aligned.apk
-          keytool -genkey -v -keystore debug.keystore -alias debug \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, ST=Debug, C=US" \
-            -storepass android -keypass android
-          apksigner sign --ks debug.keystore --ks-pass pass:android --ks-key-alias debug apk/aligned.apk
-          mv apk/aligned.apk app-debug.apk
+          cat > settings.gradle << 'SETTINGS'
+          rootProject.name = 'cakru'
+          include ':app'
+          SETTINGS
+          
+          cat > build.gradle << 'GRADLE'
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          GRADLE
+          
+          cat > app/build.gradle << 'APP'
+          android {
+              compileSdk 30
+              namespace 'com.cak.ru'
+              defaultConfig { minSdk 21; targetSdk 30 }
+          }
+          APP
+          
+          cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.cak.ru">
+              <application android:label="Cak Ru">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          MANIFEST
+          
+          cat > app/src/main/java/com/cak/ru/MainActivity.java << 'JAVA'
+          package com.cak.ru;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  TextView tv = new TextView(this);
+                  tv.setText("Hello from Cak Ru!");
+                  setContentView(tv);
+              }
+          }
+          JAVA
+          
+          cat > app/src/main/res/values/strings.xml << 'STR'
+          <resources><string name="app_name">Cak Ru</string></resources>
+          STR
+          
+          gradle wrapper --gradle-version 7.6 --no-daemon
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk cak.ru.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: hello-world-apk
-          path: app-debug.apk
+          name: cak-ru-apk
+          path: cak.ru.apk
