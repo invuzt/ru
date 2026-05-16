@@ -1,0 +1,59 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        run: |
+          sudo apt update
+          sudo apt install -y android-sdk
+          echo "ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
+      - name: Install build tools
+        run: |
+          sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3" --no_https
+
+      - name: Compile Java
+        run: |
+          mkdir -p classes
+          javac -cp "$ANDROID_HOME/platforms/android-30/android.jar" -d classes MainActivity.java
+
+      - name: Generate DEX
+        run: |
+          dx --dex --output=classes.dex classes/
+
+      - name: Package APK
+        run: |
+          mkdir -p apk
+          cp classes.dex apk/
+          aapt package -f -M AndroidManifest.xml -F apk/unaligned.apk -I "$ANDROID_HOME/platforms/android-30/android.jar" apk/
+
+      - name: Align & Sign with dummy keystore
+        run: |
+          zipalign -f -p 4 apk/unaligned.apk apk/aligned.apk
+          keytool -genkey -v -keystore debug.keystore -alias debug \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, ST=Debug, C=US" \
+            -storepass android -keypass android
+          apksigner sign --ks debug.keystore --ks-pass pass:android --ks-key-alias debug apk/aligned.apk
+          mv apk/aligned.apk app-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hello-world-apk
+          path: app-debug.apk
