@@ -22,80 +22,9 @@ jobs:
           unzip -q gradle-8.1.1-bin.zip
           export PATH=$PWD/gradle-8.1.1/bin:$PATH
           
-          mkdir -p app/src/main/java/com/cak/ru
-          mkdir -p app/src/main/res/values
-          
-          cat > settings.gradle << 'SETTINGS'
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = "cakru"
-          include ':app'
-          SETTINGS
-          
-          cat > build.gradle << 'GRADLE'
-          plugins { id 'com.android.application' version '8.1.0' apply false }
-          GRADLE
-          
-          cat > app/build.gradle << 'APP'
-          plugins { id 'com.android.application' }
-          android {
-              compileSdk 34
-              namespace 'com.cak.ru'
-              defaultConfig {
-                  minSdk 21
-                  targetSdk 34
-              }
-          }
-          APP
-          
-          cat > gradle.properties << 'PROPS'
-          android.useAndroidX=true
-          PROPS
-          
-          cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.cak.ru">
-              <application android:label="Cak Ru">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          MANIFEST
-          
-          cat > app/src/main/java/com/cak/ru/MainActivity.java << 'JAVA'
-          package com.cak.ru;
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.widget.TextView;
-          public class MainActivity extends Activity {
-              @Override
-              protected void onCreate(Bundle b) {
-                  super.onCreate(b);
-                  TextView tv = new TextView(this);
-                  tv.setText("Hello from Cak Ru!");
-                  setContentView(tv);
-              }
-          }
-          JAVA
-          
-          cat > app/src/main/res/values/strings.xml << 'STR'
-          <resources><string name="app_name">Cak Ru</string></resources>
-          STR
-          
-          cat > local.properties << 'LOCAL'
-          sdk.dir=$ANDROID_SDK_ROOT
-          LOCAL
-          
-          gradle assembleDebug --no-daemon
+          # Clean build
+          ./gradlew clean
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
