@@ -1,13 +1,11 @@
 plugins {
     id 'com.android.application'
 }
-
 android {
-    compileSdk 33
+    compileSdk 30
     namespace 'com.cak.ru'
-    
     defaultConfig {
         minSdk 21
-        targetSdk 33
+        targetSdk 30
     }
 }
