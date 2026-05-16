@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Ultra Minimal APK
 
 on:
   push:
@@ -10,24 +10,69 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Setup Java 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 11
+          java-version: 8
 
-      - name: Build APK
+      - name: Setup Android SDK
         run: |
-          # Download Gradle 7.5.1 (kompatibel dengan AGP 7.2.0)
-          wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip
-          unzip -q gradle-7.5.1-bin.zip
-          export PATH=$PWD/gradle-7.5.1/bin:$PATH
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mkdir -p android-sdk/cmdline-tools
+          mv cmdline-tools android-sdk/cmdline-tools/latest
+          export ANDROID_HOME=$PWD/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/build-tools/30.0.3" >> $GITHUB_PATH
           
-          # Build
-          gradle assembleDebug --no-daemon
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+
+      - name: Build APK with dx
+        run: |
+          export ANDROID_HOME=$PWD/android-sdk
+          
+          # Compile Java ke class (target Java 7 for smaller dex)
+          mkdir -p build/classes
+          $ANDROID_HOME/build-tools/30.0.3/javac -source 1.7 -target 1.7 \
+            -bootclasspath "$ANDROID_HOME/platforms/android-30/android.jar" \
+            -d build/classes app/src/main/java/com/cak/ru/MainActivity.java
+          
+          # Convert ke dex dengan --no-locals (lebih kecil)
+          $ANDROID_HOME/build-tools/30.0.3/dx --dex --no-locals --output=build/classes.dex build/classes
+          
+          # Buat APK kosong + tambah dex + icon
+          $ANDROID_HOME/build-tools/30.0.3/aapt package -f \
+            -M app/src/main/AndroidManifest.xml \
+            -I "$ANDROID_HOME/platforms/android-30/android.jar" \
+            -F build/unaligned.apk
+          
+          # Tambah classes.dex
+          $ANDROID_HOME/build-tools/30.0.3/aapt add build/unaligned.apk build/classes.dex
+          
+          # Tambah icon PNG ke APK (biar icon muncul)
+          $ANDROID_HOME/build-tools/30.0.3/aapt add build/unaligned.apk app/src/main/res/drawable/ic_launcher.png
+          
+          # Align & Sign
+          $ANDROID_HOME/build-tools/30.0.3/zipalign -f -p 4 build/unaligned.apk build/aligned.apk
+          
+          keytool -genkey -v -keystore debug.keystore -alias debug \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, ST=Debug, C=US" \
+            -storepass android -keypass android -noprompt
+          
+          $ANDROID_HOME/build-tools/30.0.3/apksigner sign \
+            --ks debug.keystore --ks-pass pass:android \
+            --ks-key-alias debug build/aligned.apk
+          
+          cp build/aligned.apk cak.ru.ultra-minimal.apk
+          ls -lh cak.ru.ultra-minimal.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: cak-ru-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: ultra-minimal-apk
+          path: cak.ru.ultra-minimal.apk
