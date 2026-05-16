@@ -21,6 +21,10 @@ jobs:
 
       - name: Build APK
         run: |
+          # Create all directories first
+          mkdir -p app/src/main/java/com/cak/ru
+          mkdir -p app/src/main/res/values
+          
           cat > settings.gradle << 'SETTINGS'
           rootProject.name = 'cakru'
           include ':app'
