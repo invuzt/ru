@@ -16,11 +16,13 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Build APK
+      - name: Build APK with direct commands (no Gradle wrapper issues)
         run: |
+          # Download and use specific Gradle version
+          wget https://services.gradle.org/distributions/gradle-8.1.1-bin.zip
+          unzip -q gradle-8.1.1-bin.zip
+          export PATH=$PWD/gradle-8.1.1/bin:$PATH
+          
           mkdir -p app/src/main/java/com/cak/ru
           mkdir -p app/src/main/res/values
           
@@ -65,6 +67,11 @@ jobs:
           }
           APP
           
+          cat > gradle.properties << 'PROPS'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          PROPS
+          
           cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -100,12 +107,16 @@ jobs:
           <resources><string name="app_name">Cak Ru</string></resources>
           STR
           
-          gradle wrapper --gradle-version 8.1.1 --no-daemon
-          ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk cak.ru.apk
+          # Create local properties
+          cat > local.properties << 'LOCAL'
+          sdk.dir=$ANDROID_SDK_ROOT
+          LOCAL
+          
+          # Build
+          gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: cak-ru-apk
-          path: cak.ru.apk
+          path: app/build/outputs/apk/debug/*.apk
