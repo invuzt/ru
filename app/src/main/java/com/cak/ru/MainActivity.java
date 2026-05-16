@@ -8,7 +8,6 @@ public class MainActivity extends Activity {
         super.onCreate(b);
         TextView tv = new TextView(this);
         tv.setText("Hello from Cak Ru!");
-        tv.setTextSize(32);
         setContentView(tv);
     }
 }
