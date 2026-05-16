@@ -1,0 +1,9 @@
+plugins { id 'com.android.application' }
+android {
+    compileSdk 34
+    namespace 'com.cak.ru'
+    defaultConfig {
+        minSdk 21
+        targetSdk 34
+    }
+}
