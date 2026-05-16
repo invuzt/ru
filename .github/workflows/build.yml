@@ -16,9 +16,8 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Build APK with direct commands (no Gradle wrapper issues)
+      - name: Build APK
         run: |
-          # Download and use specific Gradle version
           wget https://services.gradle.org/distributions/gradle-8.1.1-bin.zip
           unzip -q gradle-8.1.1-bin.zip
           export PATH=$PWD/gradle-8.1.1/bin:$PATH
@@ -28,45 +27,33 @@ jobs:
           
           cat > settings.gradle << 'SETTINGS'
           pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           rootProject.name = "cakru"
           include ':app'
           SETTINGS
           
           cat > build.gradle << 'GRADLE'
-          plugins {
-              id 'com.android.application' version '8.1.0' apply false
-          }
+          plugins { id 'com.android.application' version '8.1.0' apply false }
           GRADLE
           
           cat > app/build.gradle << 'APP'
-          plugins {
-              id 'com.android.application'
-          }
+          plugins { id 'com.android.application' }
           android {
-              compileSdk 33
+              compileSdk 34
               namespace 'com.cak.ru'
               defaultConfig {
                   minSdk 21
-                  targetSdk 33
+                  targetSdk 34
               }
           }
           APP
           
           cat > gradle.properties << 'PROPS'
           android.useAndroidX=true
-          android.enableJetifier=true
           PROPS
           
           cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
@@ -104,12 +91,10 @@ jobs:
           <resources><string name="app_name">Cak Ru</string></resources>
           STR
           
-          # Create local properties
           cat > local.properties << 'LOCAL'
           sdk.dir=$ANDROID_SDK_ROOT
           LOCAL
           
-          # Build
           gradle assembleDebug --no-daemon
 
       - name: Upload APK
