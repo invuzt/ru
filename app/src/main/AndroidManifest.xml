@@ -5,8 +5,7 @@
         android:label="Cak Ru"
         android:icon="@drawable/ic_launcher"
         android:roundIcon="@drawable/ic_launcher">
-        <activity android:name="com.cak.ru.MainActivity"
-            android:exported="true">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
