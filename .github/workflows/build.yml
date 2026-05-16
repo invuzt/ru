@@ -14,16 +14,16 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 11
 
       - name: Build APK
         run: |
-          # Download Gradle
-          wget https://services.gradle.org/distributions/gradle-8.1.1-bin.zip
-          unzip -q gradle-8.1.1-bin.zip
-          export PATH=$PWD/gradle-8.1.1/bin:$PATH
+          # Download Gradle 7.5.1 (kompatibel dengan AGP 7.2.0)
+          wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip
+          unzip -q gradle-7.5.1-bin.zip
+          export PATH=$PWD/gradle-7.5.1/bin:$PATH
           
-          # Build langsung dengan gradle (tanpa wrapper)
+          # Build
           gradle assembleDebug --no-daemon
 
       - name: Upload APK
