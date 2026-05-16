@@ -1,11 +1,21 @@
 plugins {
     id 'com.android.application'
 }
+
 android {
     compileSdk 30
-    namespace 'com.cak.ru'
+    
     defaultConfig {
+        applicationId "com.cak.ru"
         minSdk 21
         targetSdk 30
+        versionCode 1
+        versionName "1.0"
     }
+    
+    namespace 'com.cak.ru'
+}
+
+dependencies {
+    // no dependencies
 }
