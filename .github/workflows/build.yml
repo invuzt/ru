@@ -55,15 +55,12 @@ jobs:
               id 'com.android.application'
           }
           android {
-              compileSdk 30
+              compileSdk 33
               namespace 'com.cak.ru'
               defaultConfig {
                   minSdk 21
-                  targetSdk 30
+                  targetSdk 33
               }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           APP
           
