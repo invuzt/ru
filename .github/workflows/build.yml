@@ -21,34 +21,52 @@ jobs:
 
       - name: Build APK
         run: |
-          # Create all directories first
           mkdir -p app/src/main/java/com/cak/ru
           mkdir -p app/src/main/res/values
           
           cat > settings.gradle << 'SETTINGS'
-          rootProject.name = 'cakru'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "cakru"
           include ':app'
           SETTINGS
           
           cat > build.gradle << 'GRADLE'
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
+          plugins {
+              id 'com.android.application' version '8.1.0' apply false
           }
           GRADLE
           
           cat > app/build.gradle << 'APP'
+          plugins {
+              id 'com.android.application'
+          }
           android {
               compileSdk 30
               namespace 'com.cak.ru'
-              defaultConfig { minSdk 21; targetSdk 30 }
+              defaultConfig {
+                  minSdk 21
+                  targetSdk 30
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           APP
           
           cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+          <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.cak.ru">
               <application android:label="Cak Ru">
@@ -82,7 +100,7 @@ jobs:
           <resources><string name="app_name">Cak Ru</string></resources>
           STR
           
-          gradle wrapper --gradle-version 7.6 --no-daemon
+          gradle wrapper --gradle-version 8.1.1 --no-daemon
           ./gradlew assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk cak.ru.apk
 
