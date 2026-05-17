@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.cak.ru">
     <application
-        android:label="Cak Ru"
+        android:label="CRUD App"
         android:icon="@drawable/ic_launcher"
         android:roundIcon="@drawable/ic_launcher">
         <activity android:name=".MainActivity" android:exported="true">
