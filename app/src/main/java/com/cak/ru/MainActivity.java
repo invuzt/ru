@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
 import android.content.SharedPreferences;
-import android.content.DialogInterface;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.ArrayList;
@@ -32,10 +31,12 @@ public class MainActivity extends Activity {
         displayItems = new ArrayList<>();
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         
-        loadData();
-        
+        // Inisialisasi adapter FIRST
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, displayItems);
         listView.setAdapter(adapter);
+        
+        // THEN load data
+        loadData();
         
         // Tombol tambah
         findViewById(R.id.btnAdd).setOnClickListener(v -> showDialog(-1, null, null));
@@ -129,6 +130,7 @@ public class MainActivity extends Activity {
         try {
             String jsonString = prefs.getString(KEY_DATA, "[]");
             JSONArray jsonArray = new JSONArray(jsonString);
+            items.clear();
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
                 HashMap<String, String> item = new HashMap<>();
@@ -147,6 +149,8 @@ public class MainActivity extends Activity {
         for (HashMap<String, String> item : items) {
             displayItems.add(item.get("title"));
         }
-        adapter.notifyDataSetChanged();
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
     }
 }
